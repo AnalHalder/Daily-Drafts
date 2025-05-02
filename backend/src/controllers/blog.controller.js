@@ -79,7 +79,9 @@ const likeBlog = async (req, res) => {
         }
 
         if (blog.likes.includes(userId)) { // Prevent multiple likes by same user
-            return res.status(400).json({ message: "you have already liked this blog" });
+            blog.likes = blog.likes.filter(ele => ele.toString() != userId.toString());
+            await blog.save();
+            return res.status(200).json({ message: "you unliked this blog", blog });
         }
 
         blog.likes.push(userId)
@@ -121,6 +123,57 @@ const commentBlog = async (req, res) => {
 
 }
 
+const commentDelete = async (req, res) => {
+    const userId = req.user._id
+    const blogId = req.params.id
+    const commentId = req.params.commentId
+
+    const blog = await Blog.findById(blogId);
+    if (!blog) {
+        return res.status(400).json({ message: "blog not found" })
+    }
+
+    const comment = blog.comments.id(commentId) /*here .id works but .findById dont because comments is a Mongoose subdocument array, and .id() is a special method provided by Mongoose for subdocument arrays. A subdocument is just a nested object inside another document. It has no special methods — it's just plain data.*/
+    if (!comment) {
+        return res.status(400).json({ message: "comment not found" })
+    }
+
+    if (userId.toString() !== comment.user.toString()) {
+        return res.status(400).json({ message: "only commented person can delete this" })
+    }
+
+    blog.comments = blog.comments.filter(ele => ele._id.toString() !== commentId)
+    await blog.save();
+
+    return res.status(200).json({ message: "comment succesfully deleted", blog })
+}
+
+const commentEdit = async (req, res) => {
+    const userId = req.user._id
+    const blogId = req.params.id
+    const { editComment } = req.body
+    const commentId = req.params.commentId
+
+    const blog = await Blog.findById(blogId);
+    if (!blog) {
+        return res.status(400).json({ message: "blog not found" })
+    }
+
+    const comment = blog.comments.id(commentId)
+    if (!comment) {
+        return res.status(400).json({ message: "comment not found" })
+    }
+
+    if (userId.toString() !== comment.user.toString()) {
+        return res.status(400).json({ message: "only commented person can edit this" })
+    }
+
+    comment.text = editComment
+    await blog.save();
+
+    return res.status(200).json({ message: "comment succesfully edited", blog })
+}
+
 const getAllBlogs = async (req, res) => {
     try {
         const blogs = await Blog.find()
@@ -138,7 +191,7 @@ const getAllBlogs = async (req, res) => {
 const getAllBlogsByUser = async (req, res) => {
     const userId = req.user._id
     try {
-        const blogs = await Blog.find({userId})
+        const blogs = await Blog.find({ userId })
             .populate("userId", "name _id")
             .populate("comments.user", "name _id")
             .populate("likes", "name _id")
@@ -156,6 +209,8 @@ module.exports = {
     editBlog,
     likeBlog,
     commentBlog,
+    commentDelete,
+    commentEdit,
     getAllBlogs,
     getAllBlogsByUser
 }
