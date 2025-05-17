@@ -205,12 +205,25 @@ const saveBlog = async (req, res) => {
 
 const getAllBlogs = async (req, res) => {
     try {
+        const page = parseInt(req.query.page) || 1
+        const limit = parseInt(req.query.limit) || 10
+        const skip = (page - 1) * limit;
+
         const blogs = await Blog.find()
-            .populate("userId", "name _id")
-            .populate("comments.user", "name _id")
+            .populate('userId', 'name email')
+            .populate('comments.user', 'name')
             .populate("likes", "name _id")
-            .sort({ createdAt: -1 })
-        return res.status(200).json({ blogs })
+            .sort({ createdAt: -1 }) // newest first
+            .skip(skip)
+            .limit(limit);
+
+        const totalBlogs = await Blog.countDocuments(); 
+
+        return res.status(200).json({
+            blogs,
+            totalPages: Math.ceil(totalBlogs / limit),
+            currentPage: page
+        });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "internal server error" })
@@ -220,12 +233,25 @@ const getAllBlogs = async (req, res) => {
 const getAllBlogsByUser = async (req, res) => {
     const userId = req.user._id
     try {
-        const blogs = await Blog.find({ userId })
-            .populate("userId", "name _id")
-            .populate("comments.user", "name _id")
+        const page = parseInt(req.query.page) || 1
+        const limit = parseInt(req.query.limit) || 10
+        const skip = (page - 1) * limit;
+
+        const blogs = await Blog.find({userId})
+            .populate('userId', 'name email')
+            .populate('comments.user', 'name')
             .populate("likes", "name _id")
-            .sort({ createdAt: -1 })
-        return res.status(200).json({ blogs })
+            .sort({ createdAt: -1 }) // newest first
+            .skip(skip)
+            .limit(limit);
+
+        const totalBlogs = await Blog.countDocuments({userId}); 
+
+        return res.status(200).json({
+            blogs,
+            totalPages: Math.ceil(totalBlogs / limit),
+            currentPage: page
+        });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "internal server error" })
