@@ -10,6 +10,7 @@ const {
     commentBlog,
     commentDelete,
     commentEdit,
+    saveBlog,
     getAllBlogs,
     getAllBlogsByUser,
 } = require('../controllers/blog.controller');
@@ -27,6 +28,8 @@ route.post("/:id/comment", protectRoute, commentBlog)
 route.delete("/:id/comment/:commentId", protectRoute, commentDelete)
 
 route.patch("/:id/comment/:commentId", protectRoute, commentEdit)
+
+route.post("/:id/save",protectRoute,saveBlog)
 
 route.get("/getAllBlogs", getAllBlogs)
 

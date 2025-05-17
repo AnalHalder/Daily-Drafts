@@ -1,4 +1,6 @@
 const Blog = require("../models/blog.model")
+const User = require("../models/user.model")
+
 
 const createBlog = async (req, res) => {
     try {
@@ -174,6 +176,33 @@ const commentEdit = async (req, res) => {
     return res.status(200).json({ message: "comment succesfully edited", blog })
 }
 
+const saveBlog = async (req, res) => {
+    try {
+        const blogId = req.params.id
+        const userId = req.user._id
+
+        const blog = await Blog.findById(blogId);
+        if (!blog) {
+            return res.status(400).json({ message: "blog not found" })
+        }
+
+        const user = await User.findById(userId);
+        if (user.saved.includes(blogId)) {
+            user.saved = user.saved.filter(ele => ele.toString() != blogId.toString());
+            await user.save();
+            return res.status(200).json({ message: "you unsaved this blog", saved : user.saved });
+        }
+
+        user.saved.push(blogId)
+        await user.save();
+
+        return res.status(200).json({ message: "you saved this blog", saved : user.saved })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "internal server error" })
+    }
+}
+
 const getAllBlogs = async (req, res) => {
     try {
         const blogs = await Blog.find()
@@ -211,6 +240,7 @@ module.exports = {
     commentBlog,
     commentDelete,
     commentEdit,
+    saveBlog,
     getAllBlogs,
     getAllBlogsByUser
 }
