@@ -1,5 +1,5 @@
 const express = require('express');
-const route = express.Router();
+const blogRouter = express.Router();
 
 const protectRoute = require('../middlewares/auth.middleware');
 const {
@@ -15,24 +15,24 @@ const {
     getAllBlogsByUser,
 } = require('../controllers/blog.controller');
 
-route.post("/createblog", protectRoute, createBlog)
+blogRouter.post("/createblog", protectRoute, createBlog)
 
-route.delete("/:id", protectRoute, deleteBlog)
+blogRouter.delete("/:id", protectRoute, deleteBlog)
 
-route.patch("/:id", protectRoute, editBlog)
+blogRouter.patch("/:id", protectRoute, editBlog)
 
-route.post("/:id/like", protectRoute, likeBlog)
+blogRouter.post("/:id/like", protectRoute, likeBlog)
 
-route.post("/:id/comment", protectRoute, commentBlog)
+blogRouter.post("/:id/comment", protectRoute, commentBlog)
 
-route.delete("/:id/comment/:commentId", protectRoute, commentDelete)
+blogRouter.delete("/:id/comment/:commentId", protectRoute, commentDelete)
 
-route.patch("/:id/comment/:commentId", protectRoute, commentEdit)
+blogRouter.patch("/:id/comment/:commentId", protectRoute, commentEdit)
 
-route.post("/:id/save",protectRoute,saveBlog)
+blogRouter.post("/:id/save",protectRoute,saveBlog)
 
-route.get("/getAllBlogs", getAllBlogs)
+blogRouter.get("/getAllBlogs", getAllBlogs)
 
-route.get("/getAllBlogsByUser", protectRoute, getAllBlogsByUser)
+blogRouter.get("/getAllBlogsByUser", protectRoute, getAllBlogsByUser)
 
-module.exports = route
+module.exports = blogRouter
