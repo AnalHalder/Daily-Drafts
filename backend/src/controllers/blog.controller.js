@@ -190,13 +190,13 @@ const saveBlog = async (req, res) => {
         if (user.saved.includes(blogId)) {
             user.saved = user.saved.filter(ele => ele.toString() != blogId.toString());
             await user.save();
-            return res.status(200).json({ message: "you unsaved this blog", saved : user.saved });
+            return res.status(200).json({ message: "you unsaved this blog", saved: user.saved });
         }
 
         user.saved.push(blogId)
         await user.save();
 
-        return res.status(200).json({ message: "you saved this blog", saved : user.saved })
+        return res.status(200).json({ message: "you saved this blog", saved: user.saved })
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "internal server error" })
@@ -217,7 +217,7 @@ const getAllBlogs = async (req, res) => {
             .skip(skip)
             .limit(limit);
 
-        const totalBlogs = await Blog.countDocuments(); 
+        const totalBlogs = await Blog.countDocuments();
 
         return res.status(200).json({
             blogs,
@@ -237,7 +237,7 @@ const getAllBlogsByUser = async (req, res) => {
         const limit = parseInt(req.query.limit) || 10
         const skip = (page - 1) * limit;
 
-        const blogs = await Blog.find({userId})
+        const blogs = await Blog.find({ userId })
             .populate('userId', 'name email')
             .populate('comments.user', 'name')
             .populate("likes", "name _id")
@@ -245,7 +245,7 @@ const getAllBlogsByUser = async (req, res) => {
             .skip(skip)
             .limit(limit);
 
-        const totalBlogs = await Blog.countDocuments({userId}); 
+        const totalBlogs = await Blog.countDocuments({ userId });
 
         return res.status(200).json({
             blogs,
@@ -255,6 +255,23 @@ const getAllBlogsByUser = async (req, res) => {
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "internal server error" })
+    }
+}
+
+const searchBlog = async (req, res) => {
+    try {
+        const keyword = req.query.search;
+
+        const blogs = await Blog.find({
+            $or: [
+                { title: { $regex: keyword, $options: 'i' } },
+                { content: { $regex: keyword, $options: 'i' } },
+            ],
+        });
+
+        res.json(blogs);
+    } catch (err) {
+        res.status(500).json({ message: 'Search failed' });
     }
 }
 
@@ -268,5 +285,6 @@ module.exports = {
     commentEdit,
     saveBlog,
     getAllBlogs,
-    getAllBlogsByUser
+    getAllBlogsByUser,
+    searchBlog
 }
