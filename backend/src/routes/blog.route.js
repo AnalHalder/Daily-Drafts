@@ -13,7 +13,9 @@ const {
     saveBlog,
     getAllBlogs,
     getAllBlogsByUser,
-    searchBlog
+    searchBlog,
+    getCategories,
+    getBlog
 } = require('../controllers/blog.controller');
 
 blogRouter.post("/createblog", protectRoute, createBlog)
@@ -37,5 +39,9 @@ blogRouter.get("/getAllBlogs", getAllBlogs)
 blogRouter.get("/getAllBlogsByUser", protectRoute, getAllBlogsByUser)
 
 blogRouter.get("/search", searchBlog)
+
+blogRouter.get("/categories", getCategories)
+
+blogRouter.get("/:id", getBlog)
 
 module.exports = blogRouter

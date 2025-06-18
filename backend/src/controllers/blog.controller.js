@@ -1,14 +1,13 @@
 const Blog = require("../models/blog.model")
 const User = require("../models/user.model")
 
-
 const createBlog = async (req, res) => {
     try {
-        const { title, content } = req.body
+        const { title, content, categories } = req.body
         const userId = req.user._id
 
         const newBlog = await Blog.create({
-            title, content, userId
+            title, content, userId, categories
         })
 
         if (newBlog) {
@@ -207,9 +206,15 @@ const getAllBlogs = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1
         const limit = parseInt(req.query.limit) || 10
+        const categories = req.query.categories ? req.query.categories.split(',') : [];
         const skip = (page - 1) * limit;
 
-        const blogs = await Blog.find()
+        const filter = {};
+        if (categories.length > 0) {
+            filter.categories = { $in: categories };
+        }
+
+        const blogs = await Blog.find(filter)
             .populate('userId', 'name email')
             .populate('comments.user', 'name')
             .populate("likes", "name _id")
@@ -217,7 +222,7 @@ const getAllBlogs = async (req, res) => {
             .skip(skip)
             .limit(limit);
 
-        const totalBlogs = await Blog.countDocuments();
+        const totalBlogs = await Blog.countDocuments(filter);
 
         return res.status(200).json({
             blogs,
@@ -261,17 +266,60 @@ const getAllBlogsByUser = async (req, res) => {
 const searchBlog = async (req, res) => {
     try {
         const keyword = req.query.search;
+        const categories = req.query.categories?.split(',') || [];
 
-        const blogs = await Blog.find({
-            $or: [
-                { title: { $regex: keyword, $options: 'i' } },
-                { content: { $regex: keyword, $options: 'i' } },
-            ],
-        });
+        if (!keyword) {
+            return res.status(400).json({ message: "Search keyword is required" });
+        }
+
+        const conditions = [
+            {
+                $or: [
+                    { title: { $regex: keyword, $options: 'i' } },
+                    { content: { $regex: keyword, $options: 'i' } }
+                ]
+            }
+        ];
+
+        if (categories.length > 0) {
+            conditions.push({ categories: { $in: categories } });
+        }
+
+        const blogs = await Blog.find({ $and: conditions });
 
         res.json(blogs);
     } catch (err) {
         res.status(500).json({ message: 'Search failed' });
+    }
+}
+
+const getCategories = async (req, res) => {
+    try {
+        const categories = await Blog.distinct("categories"); 
+        return res.status(200).json({ categories });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+const getBlog = async (req, res) => {
+    try {
+        const blogId = req.params.id
+
+        const blog = await Blog.findById(blogId)
+            .populate('userId', 'name email')
+            .populate('comments.user', 'name')
+            .populate("likes", "name _id")
+
+        if (!blog) {
+            return res.status(400).json({ message: "blog not found" })
+        }
+
+        return res.status(200).json({ blog })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "internal server error" })
     }
 }
 
@@ -286,5 +334,7 @@ module.exports = {
     saveBlog,
     getAllBlogs,
     getAllBlogsByUser,
-    searchBlog
+    getBlog,
+    searchBlog,
+    getCategories
 }
